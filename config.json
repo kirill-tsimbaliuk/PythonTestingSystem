@@ -1,0 +1,7 @@
+{
+  "answers": "answers",
+  "temp": "tmp",
+  "table_path": "output.csv",
+  "token": "your-token",
+  "disk_folder": "test"
+}

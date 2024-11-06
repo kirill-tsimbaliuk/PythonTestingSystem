@@ -1,0 +1,2 @@
+class InvalidSemFile(Exception):
+    pass
