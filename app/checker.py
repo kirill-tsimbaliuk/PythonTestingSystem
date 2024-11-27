@@ -1,6 +1,5 @@
 import json
 import os
-from exceptions import *
 import logging
 
 
@@ -17,7 +16,7 @@ class TaskChecker:
         try:
             cmd = f"__import__(\"{self.config['answers']}.{sem_name}\").{sem_name}.TASK_COUNT"
         except AttributeError:
-            raise InvalidSemFile(f"Invalid sem file: {self.config['answers']}\\{sem_name}.py")
+            raise logging.error(f"Invalid sem file: {self.config['answers']}\\{sem_name}.py")
         else:
             for task in range(1, eval(cmd) + 1):
                 try:
@@ -32,19 +31,8 @@ class TaskChecker:
                         args_generator = eval(
                             f"__import__(\"{self.config['answers']}.{sem_name}\").{sem_name}.task_{task}_args")
                     except AttributeError:
-                        raise InvalidSemFile(f"Invalid sem file: {self.config['answers']}\\{sem_name}.py")
+                        raise logging.error(f"Invalid sem file: {self.config['answers']}\\{sem_name}.py")
                     else:
                         output[f"task_{task}"] = all(user_func(*args) == right_func(*args) for args in args_generator())
 
             return output
-
-
-if __name__ == "__main__":
-    with open("config.json") as file:
-        main_config = json.load(file)
-    checker = TaskChecker(main_config)
-
-    print(checker.run_tests("kirill", "sem_00"))
-
-
-

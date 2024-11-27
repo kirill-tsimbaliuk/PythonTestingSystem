@@ -20,7 +20,7 @@ Creates a folder system on yandex disk with root in disk_folder (from config) an
 python main.py check sem_name
 ```
 
-Check all students from table homework
+Check all students homework to one seminar
 
 ### Download all students work from disk
 

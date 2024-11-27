@@ -1,7 +1,8 @@
 {
   "answers": "answers",
   "temp": "tmp",
-  "table_path": "output.csv",
+  "output": "output.csv",
   "token": "your-token",
-  "disk_folder": "test"
+  "disk_folder": "test",
+  "session_file": "session.session"
 }

@@ -6,6 +6,7 @@ class Student:
     name: str
     email: str
     link: str
+    folder_name: str
 
 
 @dataclass
