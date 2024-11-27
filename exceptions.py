@@ -1,2 +1,0 @@
-class InvalidSemFile(Exception):
-    pass
