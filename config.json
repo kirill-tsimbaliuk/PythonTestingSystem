@@ -2,7 +2,8 @@
   "answers": "answers",
   "temp": "tmp",
   "output": "output.csv",
-  "token": "your-token",
   "disk_folder": "test",
-  "session_file": "session.session"
+  "session_file": "session.session",
+  "email_subject": "Папка на диске для ДЗ по Python",
+  "email_message_template": "{name}, вот ссылка на твою папку:\n{link}"
 }
