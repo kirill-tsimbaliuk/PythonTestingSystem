@@ -1,15 +1,15 @@
 import json
-import os.path
 import sys
 import logging
 import pickle
+from pathlib import Path
+
 import pandas as pd
 
 from app import TaskChecker, AppSession, Student
 
 
 class MainManager:
-
     def __init__(self, config: dict):
         self.config = config
         self.checker = TaskChecker(config)
@@ -32,33 +32,40 @@ class MainManager:
         else:
             logging.error("Invalid command")
 
-    def create(self, path_to_table):
+    def create(self, path_to_table):  # TODO
         # Code for create session example session file
         student1 = Student(name="Kirill", email="", link="", folder_name="kirill")
         student2 = Student(name="Test", email="", link="", folder_name="test")
         session = AppSession([student1, student2], 2)
 
-        with open(self.config['session_file'], 'wb') as file:
+        with open(self.config["session_file"], "wb") as file:
+            # noinspection PyTypeChecker
             pickle.dump(session, file)
 
     def check(self, sem_name):
-        if not os.path.exists(self.config['session_file']):
+        if not Path(self.config["session_file"]).exists():
             logging.error("No session file")
+
         logging.info("Load session file")
 
-        with open(self.config["session_file"], 'rb') as file:
+        with open(self.config["session_file"], "rb") as file:
             session = pickle.load(file)
 
         results = []
         for student in session.students:
             logging.info(f"Check for student: {student.name}")
-            if not os.path.exists(os.path.join(self.config['temp'], student.folder_name)):
-                logging.error(f"Fail to find student folder")
+
+            if not Path(self.config["temp"], student.folder_name).exists():
+                logging.error("Fail to find student folder")
                 continue
-            if not os.path.exists(os.path.join(self.config['temp'], student.folder_name, sem_name + ".py")):
-                logging.info(f"No solution find")
+
+            if not Path(
+                self.config["temp"], student.folder_name, f"{sem_name}.py"
+            ).exists():
+                logging.info("No solution find")
                 continue
-            results.append(self.checker.run_tests())
+
+            results.append(self.checker.run_tests())  # FIXME
 
         data = pd.DataFrame(results)
         data.to_csv(self.config["output"])
