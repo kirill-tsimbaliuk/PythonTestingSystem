@@ -1,13 +1,13 @@
-import os
 import logging
+from pathlib import Path
 
 
 class TaskChecker:
     config: dict
 
     def __init__(self, config: dict):
-        os.makedirs(config["answers"], exist_ok=True)
-        os.makedirs(config["temp"], exist_ok=True)
+        Path(config["answers_directory"]).mkdir(parents=True, exist_ok=True)
+        Path(config["temp_directory"]).mkdir(parents=True, exist_ok=True)
         self.config = config
 
     def run_tests(self, solution_filename: str, sem_name: str) -> dict:
