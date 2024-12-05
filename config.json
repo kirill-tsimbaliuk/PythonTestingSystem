@@ -1,9 +1,10 @@
 {
-  "answers": "answers",
-  "temp": "tmp",
+  "answers_directory": "answers",
+  "temp_directory": "tmp",
+  "google_credentials_directory": "google_credentials",
   "output": "output.csv",
-  "disk_folder": "test",
+  "drive_folder": "mipt_python_homework",
   "session_file": "session.session",
   "email_subject": "Папка на диске для ДЗ по Python",
-  "email_message_template": "{name}, вот ссылка на твою папку:\n{link}"
+  "email_message_template": "{name}, вот ссылка на твою папку:\n{link}",
 }

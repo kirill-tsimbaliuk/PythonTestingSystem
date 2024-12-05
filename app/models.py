@@ -8,6 +8,10 @@ class Student:
     link: str
     folder_name: str
 
+    @property
+    def folder_id(self) -> str:
+        return self.link.split("/")[-1]
+
 
 @dataclass
 class AppSession:

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from app import TaskChecker, AppSession, Student
+from app import TaskChecker, AppSession, Student, DriveManager, notify
 
 
 class MainManager:
@@ -18,12 +18,12 @@ class MainManager:
         command = argv[1]
 
         if command == "create":
-            if len(argv) == 2:
+            if len(argv) < 3:
                 logging.error("No input file")
                 sys.exit()
             self.create(argv[2])
         elif command == "check":
-            if len(argv) == 2:
+            if len(argv) < 3:
                 logging.error("No input name")
                 sys.exit()
             self.check(argv[2])
@@ -38,31 +38,41 @@ class MainManager:
         student2 = Student(name="Test", email="", link="", folder_name="test")
         session = AppSession([student1, student2], 2)
 
+        drive_manager = DriveManager(self.config["google_credentials_directory"])
+
+        drive_manager.create_folders(session.students, config["drive_folder"])
+        notify(
+            session.students, config["email_subject"], config["email_message_template"]
+        )
+
         with open(self.config["session_file"], "wb") as file:
             # noinspection PyTypeChecker
             pickle.dump(session, file)
 
-    def check(self, sem_name):
+    def load_session(self) -> AppSession:
         if not Path(self.config["session_file"]).exists():
-            logging.error("No session file")
+            self.create("")
 
         logging.info("Load session file")
 
         with open(self.config["session_file"], "rb") as file:
-            session = pickle.load(file)
+            return pickle.load(file)
+
+    def check(self, sem_name):
+        session = self.load_session()
 
         results = []
         for student in session.students:
             logging.info(f"Check for student: {student.name}")
 
-            if not Path(self.config["temp"], student.folder_name).exists():
-                logging.error("Fail to find student folder")
+            if not Path(self.config["temp_directory"], student.folder_name).exists():
+                logging.error("Failed to find student folder")
                 continue
 
             if not Path(
-                self.config["temp"], student.folder_name, f"{sem_name}.py"
+                self.config["temp_directory"], student.folder_name, f"{sem_name}.py"
             ).exists():
-                logging.info("No solution find")
+                logging.error("No solution found")
                 continue
 
             results.append(self.checker.run_tests())  # FIXME
@@ -71,23 +81,26 @@ class MainManager:
         data.to_csv(self.config["output"])
 
     def download(self):
-        pass
+        session = self.load_session()
+
+        drive_manager = DriveManager(self.config["google_credentials_directory"])
+
+        drive_manager.download_directories(
+            session.students, self.config["temp_directory"]
+        )
 
 
 LOG_LEVEL = "INFO"
 LOG_FORMAT = "%(levelname)s - %(asctime)s - %(message)s"
+CONFIG_PATH = Path("config.json")
 
 if __name__ == "__main__":
-    with open("config.json") as file:
-        config = json.load(file)
+    config = json.loads(CONFIG_PATH.read_text())
 
-    if "log" in config:
-        logging.basicConfig(filename=config["log"], level=LOG_LEVEL, format=LOG_FORMAT)
-    else:
-        logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
+    logging.basicConfig(filename=config.get("log"), level=LOG_LEVEL, format=LOG_FORMAT)
 
     manager = MainManager(config)
-    if len(sys.argv) == 1:
+    if len(sys.argv) < 2:
         logging.error("The command has not been entered")
         sys.exit()
 
