@@ -34,22 +34,32 @@ class MainManager:
 
     def create(self, path_to_table):  # TODO
         # Code for create session example session file
-        student1 = Student(name="Kirill", email="", link="", folder_name="kirill")
-        student2 = Student(name="Test", email="", link="", folder_name="test")
-        session = AppSession([student1, student2], 2)
+        student1 = Student(
+            name="Кирилл Цимбалюк",
+            email="tsimbaliuk.ka@phystech.edu",
+            folder_name="tsimbaliuk.ka",
+        )
+        student2 = Student(
+            name="Андрей Кругликов",
+            email="kruglikov.as@phystech.edu",
+            folder_name="kruglikov.as",
+        )
+        session = AppSession([student1, student2])
 
         drive_manager = DriveManager(self.config["google_credentials_directory"])
 
-        drive_manager.create_folders(session.students, config["drive_folder"])
+        students_to_notify = drive_manager.create_folders(
+            session.students, config["drive_folder"]
+        )
         notify(
-            session.students, config["email_subject"], config["email_message_template"]
+            students_to_notify,
+            config["email_subject"],
+            config["email_message_template"],
         )
 
-        with open(self.config["session_file"], "wb") as file:
-            # noinspection PyTypeChecker
-            pickle.dump(session, file)
+        self._save_session(session)
 
-    def load_session(self) -> AppSession:
+    def _load_session(self) -> AppSession:
         if not Path(self.config["session_file"]).exists():
             self.create("")
 
@@ -58,8 +68,13 @@ class MainManager:
         with open(self.config["session_file"], "rb") as file:
             return pickle.load(file)
 
+    def _save_session(self, session) -> None:
+        with open(self.config["session_file"], "wb") as file:
+            # noinspection PyTypeChecker
+            pickle.dump(session, file)
+
     def check(self, sem_name):
-        session = self.load_session()
+        session = self._load_session()
 
         results = []
         for student in session.students:
@@ -81,13 +96,15 @@ class MainManager:
         data.to_csv(self.config["output"])
 
     def download(self):
-        session = self.load_session()
+        session = self._load_session()
 
         drive_manager = DriveManager(self.config["google_credentials_directory"])
 
         drive_manager.download_directories(
             session.students, self.config["temp_directory"]
         )
+
+        self._save_session(session)
 
 
 LOG_LEVEL = "INFO"

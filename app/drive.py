@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from typing import Iterable
 
+from aiogoogle.models import Response
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -16,7 +17,7 @@ from app import Student
 
 SERVICE_NAME = "drive"
 API_VERSION = "v3"
-SCOPES = ["https://www.googleapis.com/auth/drive.file"]
+SCOPES = ["https://www.googleapis.com/auth/drive"]
 
 folder_mimetype = "application/vnd.google-apps.folder"
 
@@ -65,14 +66,14 @@ class DriveManager:
             # noinspection PyTypeChecker
             response: dict = await self.aiogoogle.as_user(
                 self.service.files.list(
-                    q=f"name='{name}' and mimeType='{folder_mimetype}'",
+                    q=f"name = '{name}' and mimeType = '{folder_mimetype}' and trashed = false",
                     pageSize=1,
                     spaces="drive",
                     fields="files(id)",
                 )
             )
 
-            if folders := response.get("files", []):
+            if folders := response["files"]:
                 return folders[0]["id"]
             else:
                 # noinspection PyTypeChecker
@@ -90,34 +91,74 @@ class DriveManager:
 
     async def create_folders_async(
         self, students: Iterable[Student], root_folder_name: str
-    ) -> None:
-        students = list(students)
+    ) -> list[Student]:
+        students_without_folder = list(students)
 
         parent_id = await self._get_root_folder_id(root_folder_name)
 
-        create_requests = [
-            self.service.files.create(
-                json={
-                    "name": student.folder_name,
-                    "mimeType": folder_mimetype,
-                    "parents": [parent_id],
-                },
-                fields="id, name, webViewLink",
-            )
-            for student in students
-        ]
-
         async with self.aiogoogle:
+            # noinspection PyTypeChecker
+            check_response: Response = await self.aiogoogle.as_user(
+                self.service.files.list(
+                    q=(
+                        f"'{parent_id}' in parents and "
+                        f"mimeType = '{folder_mimetype}' and "
+                        f"trashed = false"
+                    ),
+                    spaces="drive",
+                    fields="files(name, webViewLink)",
+                ),
+                full_res=True,
+            )
+
+            async for page in check_response:
+                for folder in page["files"]:
+                    for student in students_without_folder:
+                        if folder["name"] == student.folder_name:
+                            student.link = folder["webViewLink"]
+                            students_without_folder.remove(student)
+
+            if not students_without_folder:
+                logging.info("Folders for all students have been already created")
+                return students_without_folder
+
+            create_requests = [
+                self.service.files.create(
+                    json={
+                        "name": student.folder_name,
+                        "mimeType": folder_mimetype,
+                        "parents": [parent_id],
+                    },
+                    fields="id, name, webViewLink",
+                )
+                for student in students_without_folder
+            ]
+
             # noinspection PyTypeChecker
             folders = await self.aiogoogle.as_user(*create_requests)
             folders: list[dict] = [folders] if isinstance(folders, dict) else folders
 
-        for student, folder in zip(students, folders):
+            permission_requests = [
+                self.service.permissions.create(
+                    fileId=folder["id"],
+                    json={
+                        "role": "writer",
+                        "type": "anyone",
+                    },
+                )
+                for student, folder in zip(students_without_folder, folders)
+            ]
+
+            await self.aiogoogle.as_user(*permission_requests)
+
+        for student, folder in zip(students_without_folder, folders):
             student.link = folder["webViewLink"]
 
             logging.info(
                 f"Created folder: {root_folder_name}/{student.folder_name} -> {student.link}"
             )
+
+        return students_without_folder
 
     async def download_directories_async(
         self, students: Iterable[Student], destination: os.PathLike | str
@@ -126,36 +167,32 @@ class DriveManager:
         destination = Path(destination)
         destination.mkdir(parents=True, exist_ok=True)
 
-        page_tokens: list[str | None] = [None] * len(students)
         student_files: dict[Student, list[dict]] = {student: [] for student in students}
+
+        for student in students:
+            (destination / student.folder_name).mkdir(parents=True, exist_ok=True)
 
         async with self.aiogoogle:
             logging.info(f"Searching for files of {len(students)} students...")
 
-            while True:
-                search_requests = [
-                    self.service.files.list(
-                        q=f"'{student.folder_id}' in parents",
-                        spaces="drive",
-                        fields="nextPageToken, files(id, name, parents)",
-                        pageToken=page_token,
-                    )
-                    for student, page_token in zip(students, page_tokens)
-                ]
-
-                # noinspection PyTypeChecker
-                responses = await self.aiogoogle.as_user(*search_requests)
-                responses: list[dict] = (
-                    [responses] if isinstance(responses, dict) else responses
+            search_requests = [
+                self.service.files.list(
+                    q=f"'{student.folder_id}' in parents and trashed = false",
+                    spaces="drive",
+                    fields="files(id, name)"
                 )
+                for student in students
+            ]
 
-                for student, response in zip(students, responses):
-                    student_files[student].extend(response.get("files", []))
+            # noinspection PyTypeChecker
+            responses = await self.aiogoogle.as_user(*search_requests, full_res=True)
+            responses: list[Response] = (
+                [responses] if isinstance(responses, dict) else responses
+            )
 
-                page_tokens = [response.get("nextPageToken") for response in responses]
-
-                if all(map(lambda token: token is None, page_tokens)):
-                    break
+            for student, response in zip(students, responses):
+                async for page in response:
+                    student_files[student].extend(page["files"])
 
             logging.info(
                 f"Downloading {sum(map(len, student_files.values()))} student files..."
@@ -173,15 +210,17 @@ class DriveManager:
 
             await self.aiogoogle.as_user(*download_requests)
 
-            logging.info("Download complete.")
+            logging.info("Download completed")
 
     def create_folders(
         self, students: Iterable[Student], root_folder_name: str
-    ) -> None:
+    ) -> list[Student]:
         logging.info("Initializing asynchronous directory creation...")
 
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.create_folders_async(students, root_folder_name))
+        return loop.run_until_complete(
+            self.create_folders_async(students, root_folder_name)
+        )
 
     def download_directories(
         self, students: Iterable[Student], destination: os.PathLike | str
