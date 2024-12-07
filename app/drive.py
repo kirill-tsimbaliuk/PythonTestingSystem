@@ -187,7 +187,7 @@ class DriveManager:
             # noinspection PyTypeChecker
             responses = await self.aiogoogle.as_user(*search_requests, full_res=True)
             responses: list[Response] = (
-                [responses] if isinstance(responses, dict) else responses
+                [responses] if isinstance(responses, Response) else responses
             )
 
             for student, response in zip(students, responses):
