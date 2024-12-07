@@ -136,7 +136,7 @@ class DriveManager:
 
             # noinspection PyTypeChecker
             folders = await self.aiogoogle.as_user(*create_requests)
-            folders: list[dict] = [folders] if isinstance(folders, dict) else folders
+            folders: list[dict] = folders if isinstance(folders, list) else [folders]
 
             permission_requests = [
                 self.service.permissions.create(
@@ -187,7 +187,7 @@ class DriveManager:
             # noinspection PyTypeChecker
             responses = await self.aiogoogle.as_user(*search_requests, full_res=True)
             responses: list[Response] = (
-                [responses] if isinstance(responses, Response) else responses
+                responses if isinstance(responses, list) else [responses]
             )
 
             for student, response in zip(students, responses):
