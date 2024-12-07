@@ -5,6 +5,11 @@ import pickle
 from pathlib import Path
 
 import pandas as pd
+from dotenv import load_dotenv, find_dotenv
+
+# You need to download the file with environment variables on the Windows platform yourself,
+# the Windows does not guarantee that it will be pulled up automatically.
+load_dotenv(find_dotenv())
 
 from app import TaskChecker, AppSession, Student, DriveManager, notify
 
@@ -12,7 +17,6 @@ from app import TaskChecker, AppSession, Student, DriveManager, notify
 class MainManager:
     def __init__(self, config: dict):
         self.config = config
-        self.checker = TaskChecker(config)
 
     def process(self, argv: list) -> None:
         command = argv[1]
@@ -37,14 +41,10 @@ class MainManager:
         student1 = Student(
             name="Кирилл Цимбалюк",
             email="tsimbaliuk.ka@phystech.edu",
-            folder_name="tsimbaliuk.ka",
+            folder_name="tsimbaliukka",
         )
-        student2 = Student(
-            name="Андрей Кругликов",
-            email="kruglikov.as@phystech.edu",
-            folder_name="kruglikov.as",
-        )
-        session = AppSession([student1, student2])
+
+        session = AppSession([student1])
 
         drive_manager = DriveManager(self.config["google_credentials_directory"])
 
@@ -74,9 +74,11 @@ class MainManager:
             pickle.dump(session, file)
 
     def check(self, sem_name):
+        checker = TaskChecker(config)
         session = self._load_session()
 
         results = []
+        task_columns = []
         for student in session.students:
             logging.info(f"Check for student: {student.name}")
 
@@ -90,10 +92,20 @@ class MainManager:
                 logging.error("No solution found")
                 continue
 
-            results.append(self.checker.run_tests())  # FIXME
+            report = checker.run_tests(student.folder_name, sem_name)
+            task_columns = list(report.keys())
+            report['Percent'] = sum(report.values()) / len(task_columns)
+            report['Name'] = student.name
+            report['Email'] = student.email
+            results.append(report)
 
-        data = pd.DataFrame(results)
-        data.to_csv(self.config["output"])
+        data = pd.DataFrame(results)[["Name", "Email"] + task_columns + ["Percent"]]
+        output_directory = Path(self.config["output_directory"])
+        output_directory.mkdir(exist_ok=True)
+        output_file_path = output_directory / (sem_name + ".csv")
+        data.to_csv(output_file_path, index=False)
+        logging.info(f"The report is saved on path: {output_file_path}")
+        print(data)
 
     def download(self):
         session = self._load_session()

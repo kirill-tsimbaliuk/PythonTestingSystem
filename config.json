@@ -2,7 +2,7 @@
   "answers_directory": "answers",
   "temp_directory": "tmp",
   "google_credentials_directory": "google_credentials",
-  "output": "output.csv",
+  "output_directory": "output",
   "drive_folder": "mipt_python_homework",
   "session_file": "session.session",
   "email_subject": "Папка на диске для ДЗ по Python",

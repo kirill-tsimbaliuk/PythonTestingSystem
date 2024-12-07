@@ -3,7 +3,7 @@ session.session
 tmp/
 answers/
 google_credentials/
-
+output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
