@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import logging
 import pickle
@@ -36,15 +37,18 @@ class MainManager:
         else:
             logging.error("Invalid command")
 
-    def create(self, path_to_table):  # TODO
-        # Code for create session example session file
-        student1 = Student(
-            name="Кирилл Цимбалюк",
-            email="tsimbaliuk.ka@phystech.edu",
-            folder_name="tsimbaliukka",
-        )
+    def create(self, path_to_table: os.PathLike | str) -> None:
+        students = []
+        with open(path_to_table, 'r') as f:
+            for line in json.load(f):
+                student = Student(
+                    name = line[0][1],
+                    email = line[1][1],
+                    folder_name = line[1][1][:line[1][1].find('@')],
+                )
+                students.append(student)
 
-        session = AppSession([student1])
+        session = AppSession(students)
 
         drive_manager = DriveManager(self.config["google_credentials_directory"])
 
