@@ -6,11 +6,6 @@ import pickle
 from pathlib import Path
 
 import pandas as pd
-from dotenv import load_dotenv, find_dotenv
-
-# You need to download the file with environment variables on the Windows platform yourself,
-# the Windows does not guarantee that it will be pulled up automatically.
-load_dotenv(find_dotenv())
 
 from app import TaskChecker, AppSession, Student, DriveManager, notify
 
