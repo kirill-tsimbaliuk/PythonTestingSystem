@@ -40,7 +40,7 @@ class MainManager:
             student = Student(
                 name=line[0][1],
                 email=line[1][1],
-                folder_name=line[1][1][:line[1][1].find("@")].replace(".", "-"),
+                folder_name=line[1][1][:line[1][1].find("@")].replace(".", ""),
             )
             students.append(student)
 
