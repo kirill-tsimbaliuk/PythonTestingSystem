@@ -4,8 +4,12 @@ from collections.abc import Iterable
 from smtplib import SMTP_SSL
 from email.message import EmailMessage
 
+from dotenv import load_dotenv, find_dotenv
+
 from app import Student
 
+
+load_dotenv(find_dotenv())
 
 SMTP_SERVER = os.environ.get("SMTP_SERVER")
 SMTP_PORT = int(os.environ.get("SMTP_PORT"))
