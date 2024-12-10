@@ -39,14 +39,15 @@ class MainManager:
 
     def create(self, path_to_table: os.PathLike | str) -> None:
         students = []
-        with open(path_to_table, 'r') as f:
-            for line in json.load(f):
-                student = Student(
-                    name = line[0][1],
-                    email = line[1][1],
-                    folder_name = line[1][1][:line[1][1].find('@')].replace('.', ''),
-                )
-                students.append(student)
+
+        raw_json = Path(path_to_table).read_text()
+        for line in json.loads(raw_json):
+            student = Student(
+                name=line[0][1],
+                email=line[1][1],
+                folder_name=line[1][1][:line[1][1].find("@")].replace(".", "-"),
+            )
+            students.append(student)
 
         session = AppSession(students)
 
@@ -98,9 +99,9 @@ class MainManager:
 
             report = checker.run_tests(student.folder_name, sem_name)
             task_columns = list(report.keys())
-            report['Percent'] = sum(report.values()) / len(task_columns)
-            report['Name'] = student.name
-            report['Email'] = student.email
+            report["Percent"] = sum(report.values()) / len(task_columns)
+            report["Name"] = student.name
+            report["Email"] = student.email
             results.append(report)
 
         data = pd.DataFrame(results)[["Name", "Email"] + task_columns + ["Percent"]]
