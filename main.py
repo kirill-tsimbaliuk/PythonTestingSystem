@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from app import TaskChecker, AppSession, Student, DriveManager, notify
+from app import TaskChecker, AppSession, Student, DriveManager, notify, SecurityChecker
 
 
 class MainManager:
@@ -86,10 +86,13 @@ class MainManager:
                 logging.error("Failed to find student folder")
                 continue
 
-            if not Path(
-                self.config["temp_directory"], student.folder_name, f"{sem_name}.py"
-            ).exists():
+            solution_path = Path(self.config["temp_directory"], student.folder_name, f"{sem_name}.py")
+            if not solution_path.exists():
                 logging.error("No solution found")
+                continue
+
+            if not SecurityChecker.check_before_run(solution_path):
+                logging.error("File security check failed")
                 continue
 
             report = checker.run_tests(student.folder_name, sem_name)
@@ -98,6 +101,9 @@ class MainManager:
             report["Name"] = student.name
             report["Email"] = student.email
             results.append(report)
+
+        if len(results) == 0:
+            sys.exit()
 
         data = pd.DataFrame(results)[["Name", "Email"] + task_columns + ["Percent"]]
         output_directory = Path(self.config["output_directory"])
