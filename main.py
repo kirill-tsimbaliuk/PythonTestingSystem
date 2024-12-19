@@ -40,7 +40,7 @@ class MainManager:
             student = Student(
                 name=line[2][1],
                 email=line[3][1],
-                folder_name=line[3][1][:line[3][1].find("@")].replace(".", ""),
+                folder_name=line[3][1][: line[3][1].find("@")].replace(".", ""),
             )
             students.append(student)
 
@@ -61,7 +61,8 @@ class MainManager:
 
     def _load_session(self) -> AppSession:
         if not Path(self.config["session_file"]).exists():
-            self.create("")
+            logging.error("No input file")
+            sys.exit()
 
         logging.info("Load session file")
 
@@ -86,7 +87,9 @@ class MainManager:
                 logging.error("Failed to find student folder")
                 continue
 
-            solution_path = Path(self.config["temp_directory"], student.folder_name, f"{sem_name}.py")
+            solution_path = Path(
+                self.config["temp_directory"], student.folder_name, f"{sem_name}.py"
+            )
             if not solution_path.exists():
                 logging.error("No solution found")
                 continue

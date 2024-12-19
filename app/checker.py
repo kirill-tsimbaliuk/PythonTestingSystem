@@ -47,7 +47,7 @@ class TaskChecker:
                                 user_func(*args) == right_func(*args)
                                 for args in args_generator()
                             )
-                        except:
+                        except Exception:
                             logging.info(f"Error in task: task_{task}")
                             output[f"task_{task}"] = False
 
