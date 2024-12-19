@@ -25,7 +25,7 @@ folder_mimetype = "application/vnd.google-apps.folder"
 
 
 class DriveManager:
-    _SOLUTION_FILENAME_REGEX = re.compile(r"^sem_\d+.py$")
+    _SOLUTION_FILENAME_REGEX = re.compile(r"^sem_\d+\.py$")
 
     def __init__(self, credentials_directory: os.PathLike | str) -> None:
         credentials_directory = Path(credentials_directory)
