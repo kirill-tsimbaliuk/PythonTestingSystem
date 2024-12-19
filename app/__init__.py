@@ -1,4 +1,11 @@
-__all__ = ["TaskChecker", "AppSession", "Student", "DriveManager", "notify", "SecurityChecker"]
+__all__ = [
+    "TaskChecker",
+    "AppSession",
+    "Student",
+    "DriveManager",
+    "notify",
+    "SecurityChecker",
+]
 
 
 from .checker import TaskChecker
