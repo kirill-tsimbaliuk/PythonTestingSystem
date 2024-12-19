@@ -38,9 +38,9 @@ class MainManager:
         raw_json = Path(path_to_table).read_text()
         for line in json.loads(raw_json):
             student = Student(
-                name=line[0][1],
-                email=line[1][1],
-                folder_name=line[1][1][:line[1][1].find("@")].replace(".", ""),
+                name=line[2][1],
+                email=line[3][1],
+                folder_name=line[3][1][:line[3][1].find("@")].replace(".", ""),
             )
             students.append(student)
 
