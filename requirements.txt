@@ -31,5 +31,5 @@ rsa==4.9
 six==1.17.0
 tonyg-rfc3339==0.1
 tzdata==2024.2
-urllib3==2.2.3
+urllib3==2.7.0
 yarl==1.18.3
