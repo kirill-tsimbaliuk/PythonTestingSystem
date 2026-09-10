@@ -19,7 +19,7 @@ numpy==2.2.0
 oauthlib==3.2.2
 pandas==2.2.3
 propcache==0.2.1
-pyasn1==0.6.1
+pyasn1==0.6.4
 pyasn1-modules==0.4.1
 pyparsing==3.2.0
 python-dateutil==2.9.0.post0
